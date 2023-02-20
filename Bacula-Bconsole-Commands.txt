@@ -1,0 +1,41 @@
+========================================================================
+ 			  Bacula Bconsole Commands
+========================================================================
+sudo bconsole
+*label
+----------------------------
+Enter new Volume name:
+MyVolume
+----------------------------
+
+Select the Pool (1-3):
+2
+----------------------------
+*run
+----------------------------
+Select Job resource (1-3):
+1
+----------------------------
+*yes
+*messages
+*status director
+-----------------------------
+*restore all
+
+-----------------------------
+Select item (1-13):
+5
+-----------------------------
+Select FileSet resource (1-2):
+2
+-----------------------------
+$ done
+-----------------------------
+OK to run? (yes/mod/no):
+yes
+-----------------------------
+*messages
+*status director
+*exit
+$sudo ls -la /bacula/restore
+$sudo -u root bash -c "rm -rf /bacula/restore/*"
