@@ -1,17 +1,18 @@
-Bacula Configuration on Single machine
- 
-(Server and client both)
--------------------------------------
+=========================================================================================================
+				Bacula Configuration on Single machine
+=========================================================================================================
+ 					(Server and client both)
+=========================================================================================================
 
-#	yum install -y bacula-director bacula-storage bacula-console bacula-client mariadb-server httpd
+[root@server ~]#	yum install -y bacula-director bacula-storage bacula-console bacula-client mariadb-server httpd
 
-#	systemctl enable mariadb && systemctl start mariadb && systemctl status mariadb
+[root@server ~]# systemctl enable mariadb && systemctl start mariadb && systemctl status mariadb
 
-#	/usr/libexec/bacula/grant_mysql_privileges
-#	/usr/libexec/bacula/create_mysql_database -u root
-#	/usr/libexec/bacula/make_mysql_tables -u bacula
+[root@server ~]# /usr/libexec/bacula/grant_mysql_privileges
+[root@server ~]# /usr/libexec/bacula/create_mysql_database -u root
+[root@server ~]# /usr/libexec/bacula/make_mysql_tables -u bacula
 
-#	mysql_secure_installation
+[root@server ~]# mysql_secure_installation
 
 	Enter current password for root (enter for none):
 
@@ -19,30 +20,32 @@ Bacula Configuration on Single machine
 
 	password : hpcsa
 
-	Press Enter key through each prompt to accept the default values.    -->  This will remove some sample users and databases, disable remote root logins, and load these new rules so that MySQL immediately respects the changes we have made.
+	Press Enter key through each prompt to accept the default values.    -->  This will remove some sample users and databases, disable remote root logins, and load 
+                                                                                these new rules so that MySQL immediately respects the changes we have made.
 
-#	alternatives --config libbaccats.so
+[root@server ~]# alternatives --config libbaccats.so
 
 	Enter to keep the current selection[+], or type selection number:  select mysql by pressing '1'
 
-#	setenforce 0
+[root@server ~]# setenforce 0
 
-#	systemctl stop firewalld  &&  systemctl disable firewalld
+[root@server ~]# systemctl stop firewalld  &&  systemctl disable firewalld
 
-#	mkdir -p /bacula/backup /bacula/restore
+[root@server ~]# mkdir -p /bacula/backup /bacula/restore
 
-#	chown -R bacula:bacula /bacula
+[root@server ~]# chown -R bacula:bacula /bacula
 
-# 	chmod -R 700 /bacula
+[root@server ~]# chmod -R 700 /bacula
 
+[root@server ~]# vi /etc/hosts
+------------------------------------------------------------------------------------
+>> Enter >>	<baculaserver-ip> backup.hpcsa.com
+------------------------------------------------------------------------------------
 
-#	vi /etc/hosts
-
-	>> Enter >>	<baculaserver-ip> backup.hpcsa.com
-
-#	vi /etc/bacula/bacula-dir.conf
-
-	Make_Edits_in_this_file >>	
+[root@server ~]# vi /etc/bacula/bacula-dir.conf
+------------------------------------------------------------------------------------
+Make_Edits_in_this_file >>
+------------------------------------------------------------------------------------
 
  		Director {
 				 Password = hpcsa         # Console password
@@ -120,27 +123,30 @@ Bacula Configuration on Single machine
  		 Maximum Volume Bytes = 10G          # Limit Volume size to something reasonable
   		 Maximum Volumes = 100               # Limit number of Volumes in Pool
 		}
+--------------------------------------------------------------------------------------------------
 
+[root@server ~]# bacula-dir -tc /etc/bacula/bacula-dir.conf
 
-# bacula-dir -tc /etc/bacula/bacula-dir.conf
+[root@server ~]# mkdir -p /var/lib/bacula
 
-# mkdir -p /var/lib/bacula
+[root@server ~]# vi /etc/bacula/bacula-sd.conf
 
-# vi /etc/bacula/bacula-sd.conf
+[root@server ~]# bacula-sd -tc /etc/bacula/bacula-sd.conf
 
-# bacula-sd -tc /etc/bacula/bacula-sd.conf
-
-# vi /etc/bacula/bacula-fd.conf
-	
+[root@server ~]# vi /etc/bacula/bacula-fd.conf
+---------------------------------------------------------------------
 	Edit password >>
+---------------------------------------------------------------------
 				Director {
   				Name = bacula-dir
   				Password = hpcsa
 				}
+---------------------------------------------------------------------
 
-# vi /etc/bacula/bconsole.conf
-
+[root@server ~]# vi /etc/bacula/bconsole.conf
+--------------------------------------------------------------------
 	Edit password >>
+--------------------------------------------------------------------
 		#
 		# Bacula User Agent (or Console) Configuration File
 		#
@@ -151,17 +157,16 @@ Bacula Configuration on Single machine
   		address = localhost
   		Password = hpcsa
 		}
+---------------------------------------------------------------------
 
+[root@server ~]# systemctl enable bacula-dir &&  systemctl start bacula-dir &&  systemctl status bacula-dir  
+[root@server ~]# systemctl enable bacula-sd &&  systemctl start bacula-sd &&  systemctl status bacula-sd 
+[root@server ~]# systemctl enable bacula-fd &&  systemctl start bacula-fd &&  systemctl status bacula-fd
 
-# systemctl enable bacula-dir &&  systemctl start bacula-dir &&  systemctl status bacula-dir  
-# systemctl enable bacula-sd &&  systemctl start bacula-sd &&  systemctl status bacula-sd 
-# systemctl enable bacula-fd &&  systemctl start bacula-fd &&  systemctl status bacula-fd
+[root@server ~]# bconsole
 
-# bconsole
- label
- run
-
- status director
-
- restore all
+                 label
+                 run
+		     status director
+                 restore all
 
