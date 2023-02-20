@@ -1,0 +1,167 @@
+Bacula Configuration on Single machine
+ 
+(Server and client both)
+-------------------------------------
+
+#	yum install -y bacula-director bacula-storage bacula-console bacula-client mariadb-server httpd
+
+#	systemctl enable mariadb && systemctl start mariadb && systemctl status mariadb
+
+#	/usr/libexec/bacula/grant_mysql_privileges
+#	/usr/libexec/bacula/create_mysql_database -u root
+#	/usr/libexec/bacula/make_mysql_tables -u bacula
+
+#	mysql_secure_installation
+
+	Enter current password for root (enter for none):
+
+	Set root password? [Y/n] Y
+
+	password : hpcsa
+
+	Press Enter key through each prompt to accept the default values.    -->  This will remove some sample users and databases, disable remote root logins, and load these new rules so that MySQL immediately respects the changes we have made.
+
+#	alternatives --config libbaccats.so
+
+	Enter to keep the current selection[+], or type selection number:  select mysql by pressing '1'
+
+#	setenforce 0
+
+#	systemctl stop firewalld  &&  systemctl disable firewalld
+
+#	mkdir -p /bacula/backup /bacula/restore
+
+#	chown -R bacula:bacula /bacula
+
+# 	chmod -R 700 /bacula
+
+
+#	vi /etc/hosts
+
+	>> Enter >>	<baculaserver-ip> backup.hpcsa.com
+
+#	vi /etc/bacula/bacula-dir.conf
+
+	Make_Edits_in_this_file >>	
+
+ 		Director {
+				 Password = hpcsa         # Console password
+				 DirAddress = 127.0.0.1     #DIR address		    --> Enter this line if not there
+			   }
+
+		Job {
+  			Name = "BackupLocalFiles"
+  			JobDefs = "DefaultJob"
+		    }
+		#
+		# Standard Restore template, to be changed by Console program
+		#  Only one such job is needed for all Jobs/Clients/Storage ...
+		#
+
+		Job {
+ 			 Name = "RestoreLocalFiles"
+  			 Type = Restore
+  			 Client=bacula-fd
+  			 FileSet="Full Set"
+  			 Storage = File
+  			 Pool = Default
+  			 Messages = Standard
+  			 Where = /bacula/restore # restore point
+		   }
+		
+		FileSet {
+  			Name = "Full Set"
+  			Include {
+    			Options {
+      				signature = MD5
+      				compression = GZIP
+    				  }
+
+
+			File = /var/www/html/ # folder needed to backup
+
+
+			Exclude {
+    			  File = /var/lib/bacula
+    			  File = /proc
+    		        File = /tmp
+    			  File = /.journal
+    			  File = /.fsck
+    			  File = /bacula
+  				}
+			}
+
+		Storage {
+ 		 Name = File
+		# Do not use "localhost" here
+ 		 Address = backup.hpcsa.com               # N.B. Use a fully qualified name here
+  		 SDPort = 9103
+  		 Password = "@@SD_PASSWORD@@"
+  		 Device = FileStorage
+             Media Type = File
+			}
+
+
+		# Generic catalog service
+		Catalog {
+  		Name = MyCatalog
+		# Uncomment the following line if you want the dbi driver
+		# dbdriver = "dbi:postgresql"; dbaddress = 127.0.0.1; dbport =
+  		  dbname = "bacula"; dbuser = "root"; dbpassword = "hpcsa"
+		}
+
+		# File Pool definition
+		Pool {
+  		 Name = File
+  		 Pool Type = Backup
+  	       Recycle = yes                       # Bacula can automatically recycle Volumes
+  		 AutoPrune = yes                     # Prune expired volumes
+  		 Volume Retention = 30 days         # one year
+ 		 Maximum Volume Bytes = 10G          # Limit Volume size to something reasonable
+  		 Maximum Volumes = 100               # Limit number of Volumes in Pool
+		}
+
+
+# bacula-dir -tc /etc/bacula/bacula-dir.conf
+
+# mkdir -p /var/lib/bacula
+
+# vi /etc/bacula/bacula-sd.conf
+
+# bacula-sd -tc /etc/bacula/bacula-sd.conf
+
+# vi /etc/bacula/bacula-fd.conf
+	
+	Edit password >>
+				Director {
+  				Name = bacula-dir
+  				Password = hpcsa
+				}
+
+# vi /etc/bacula/bconsole.conf
+
+	Edit password >>
+		#
+		# Bacula User Agent (or Console) Configuration File
+		#
+
+		Director {
+  		Name = bacula-dir
+  		DIRport = 9101
+  		address = localhost
+  		Password = hpcsa
+		}
+
+
+# systemctl enable bacula-dir &&  systemctl start bacula-dir &&  systemctl status bacula-dir  
+# systemctl enable bacula-sd &&  systemctl start bacula-sd &&  systemctl status bacula-sd 
+# systemctl enable bacula-fd &&  systemctl start bacula-fd &&  systemctl status bacula-fd
+
+# bconsole
+ label
+ run
+
+ status director
+
+ restore all
+
